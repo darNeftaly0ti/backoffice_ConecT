@@ -23,6 +23,7 @@ class ApiConfig {
 
   // Endpoints de usuarios
   static readonly usersEndpoint = '/users';
+  static readonly loginEndpoint = '/users/login';
   static readonly createUserEndpoint = '/users/create';
   static readonly createUserMinimalEndpoint = '/users/create-minimal';
   static readonly createUserHealthEndpoint = '/users/create/health';
@@ -30,6 +31,11 @@ class ApiConfig {
   // URL completa para obtener lista de usuarios
   static get usersUrl(): string {
     return `${this.baseUrl}${this.usersEndpoint}`;
+  }
+
+  // URL completa para login
+  static get loginUrl(): string {
+    return `${this.baseUrl}${this.loginEndpoint}`;
   }
 
   // URL completa para crear usuario completo

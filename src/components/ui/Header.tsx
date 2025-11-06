@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Icon from '../AppIcon';
 import Button from './Button';
 import Select from './Select';
 import { exportToPDF, exportToExcel, tableToHTML } from '../../utils/export.utils';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -15,6 +16,9 @@ const Header = ({ onMenuToggle, showMobileMenu = false, onExport, exportData }: 
   const [dateRange, setDateRange] = useState('last-7-days');
   const [isExporting, setIsExporting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { user, logout } = useAuth();
 
   const dateRangeOptions = [
     { value: 'today', label: 'Today' },
@@ -80,6 +84,37 @@ const Header = ({ onMenuToggle, showMobileMenu = false, onExport, exportData }: 
       default:
         return 'Wifi';
     }
+  };
+
+  // Cerrar menú de usuario al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
+
+  const handleLogout = () => {
+    logout();
+    setIsUserMenuOpen(false);
+  };
+
+  const getUserDisplayName = () => {
+    if (user) {
+      return user.firstName && user.lastName 
+        ? `${user.firstName} ${user.lastName}` 
+        : user.username || user.email;
+    }
+    return 'Usuario';
   };
 
   return (
@@ -186,14 +221,62 @@ const Header = ({ onMenuToggle, showMobileMenu = false, onExport, exportData }: 
           </div>
 
           {/* User Menu */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="button-press rounded-full"
-            aria-label="User menu"
-          >
-            <Icon name="User" size={20} />
-          </Button>
+          <div className="relative" ref={userMenuRef}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="button-press rounded-full"
+              aria-label="User menu"
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            >
+              <Icon name="User" size={20} />
+            </Button>
+
+            {/* User Dropdown Menu */}
+            {isUserMenuOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-lg shadow-lg z-50">
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-full">
+                      <Icon name="User" size={20} color="white" />
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-sm font-semibold text-foreground truncate">
+                        {getUserDisplayName()}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {user?.email}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-2">
+                  <div className="px-3 py-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Icon name="Shield" size={14} />
+                      <span>Rol: {user?.roles?.[0] || 'Usuario'}</span>
+                    </div>
+                    {user?.verified && (
+                      <div className="flex items-center gap-2">
+                        <Icon name="CheckCircle" size={14} className="text-success" />
+                        <span>Verificado</span>
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleLogout}
+                    iconName="LogOut"
+                    iconPosition="left"
+                  >
+                    Cerrar Sesión
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
