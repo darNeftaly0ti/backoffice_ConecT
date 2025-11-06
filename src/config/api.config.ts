@@ -3,8 +3,23 @@
  * Base URL y endpoints de la API backend
  */
 class ApiConfig {
-  // URL base de la API - cámbiala según tu configuración
-  static readonly baseUrl: string = 'http://18.191.163.61:3005/api';
+  // URL base de la API
+  // En producción (Vercel), usa el proxy relativo para evitar Mixed Content
+  // En desarrollo, usa la URL completa del backend
+  static readonly baseUrl: string = (() => {
+    // Si hay variable de entorno, úsala
+    const envUrl = (import.meta as any).env?.VITE_API_URL;
+    if (envUrl) return envUrl;
+    
+    // Si estamos en vercel.app (producción), usa proxy relativo
+    // Si estamos en localhost (desarrollo), usa URL completa
+    const isProduction = typeof window !== 'undefined' && 
+      (window.location.hostname.includes('vercel.app') || 
+       window.location.hostname.includes('netlify.app') ||
+       window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+    
+    return isProduction ? '/api' : 'http://18.191.163.61:3005/api';
+  })();
 
   // Endpoints de usuarios
   static readonly usersEndpoint = '/users';
